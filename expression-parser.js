@@ -20,14 +20,14 @@ class ExpressionParser{
      */
 
     constructor(){
-        /**@type {Constant[]}*/
-        this.constants = [];
-        /**@type {UnaryOperator[]}*/
-        this.prefixUnaryOperators = [];
-        /**@type {UnaryOperator[]}*/
-        this.postfixUnaryOperators = [];
-        /**@type {BinaryOperator[]}*/
-        this.binaryOperators = [];
+        /**@type {Map<String,Constant}*/
+        this.constants = new Map();
+        /**@type {Map<String,UnaryOperator>}*/
+        this.prefixUnaryOperators = new Map();
+        /**@type {Map<String,UnaryOperator>}*/
+        this.postfixUnaryOperators = new Map();
+        /**@type {Map<String,BinaryOperator>}*/
+        this.binaryOperators = new Map();
 
         //Built-in constants
         this.registerConstant("e",   Math.E);
@@ -83,21 +83,21 @@ class ExpressionParser{
      * @param {Number} value
      */
     registerConstant(name,value){
-        this.constants.push({name:name,value:value});
+        this.constants.set(name,{name:name,value:value});
     }
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      */
     registerPrefixUnaryOperator(name,operation){
-        this.prefixUnaryOperators.push({name:name, operation:operation});
+        this.prefixUnaryOperators.set(name,{name:name, operation:operation});
     }
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      */
     registerPostfixUnaryOperator(name,operation){
-        this.postfixUnaryOperators.push({name:name, operation:operation});
+        this.postfixUnaryOperators.set(name,{name:name, operation:operation});
     }
     /**
      * @param {String} name 
@@ -105,27 +105,35 @@ class ExpressionParser{
      * @param {Number} precedence
      */
     registerBinaryOperator(name,operation,precedence){
-        this.binaryOperators.push({name:name, operation:operation, precedence:precedence});
+        this.binaryOperators.set(name,{name:name, operation:operation, precedence:precedence});
     }
 
     /**@param expression {String}*/
-    parse(expression){
-		let tokens = [...expression.matchAll(new RegExp(`([()])|(${
-			this.prefixUnaryOperators.map(i=>i.name).join("|")})|(${
-			this.postfixUnaryOperators.map(i=>i.name).join("|")})|(${
-			this.binaryOperators.map(i=>i.name).join("|")})|(${
-			this.constants.map(i=>i.name).join("|")
-		})|([a-zA-Z]_[_\\w]+|[a-zA-Z])|(\\d+\\.\\d+|\\.\\d+|\\d+)`,"g"))].map(i=>`<${
-			i[1]?"parentheses":
-			i[2]?"pre-unary":
-			i[3]?"post-unary":
-			i[4]?"binary":
-			i[5]?"constant":
-			i[6]?"var":
-			i[7]?"number":
-			"token"
-		} ${i[0]}>`)
-        return tokens.join(" ")
+    compile(expression){
+		let tkns = [...expression.matchAll(new RegExp(`(\\()|(\\))|(${
+			[...this.prefixUnaryOperators.keys()].join("|")})|(${
+            [...this.postfixUnaryOperators.keys()].join("|")})|(${
+            [...this.binaryOperators.keys()].join("|")})|(${
+            [...this.constants.keys()].join("|")
+		})|([a-zA-Z]_[_\\w]+|[a-zA-Z])|(\\d+\\.\\d+|\\.\\d+|\\d+)`,"g"))].map(i=>`${
+			i[1]?"lparentheses":  i[2]?"rparentheses":
+            i[3]?"pre-unary": i[4]?"post-unary": i[5]?"binary":
+            i[6]?"number": i[7]?"var": i[8]?"number": "token"
+		} ${i[6] ? this.constants.get(i[0]).value : i[0]}`);
+
+        {
+            let i = 0, lastTknType, tknType = "token",tknVal, tkn;
+            while(i < tkns.length){
+                lastTknType = tknType;
+                tkn = tkns[i], [tknType, tknVal] = tkn.split(" ");
+
+                if(lastTknType != "lparentheses" && lastTknType != "binary" && t == "pre-unary -") t = tkns[i] = "binary -";
+                a = t.split(" ")[0] == "binary" || t == "parentheses (";
+            }
+        }
+        console.log(tkns)
+
+        return null;
     }
 }
 
@@ -163,10 +171,9 @@ const toRPN = (expr)=>{
 }
 
 const clean = (expr) =>{
-    res=[];
+    let res=[],lastEl;
     for(token of expr){
-        lastEl=res.pop();
-        res.push(lastEl);
+        lastEl=res[res.length - 1]
         if(lastEl)if(('VL)'.includes(lastEl[0])||lastEl=="U:<SQ>")&&('VL('.includes(token[0]))){res.push('B:*');} //chained multiplication
         res.push(token);
     }
