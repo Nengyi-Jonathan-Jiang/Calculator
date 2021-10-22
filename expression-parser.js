@@ -17,6 +17,8 @@ class ExpressionParser{
      *      operation: (a:Number, b:Number)=>Number,
      *      precedence: Number
      * }} BinaryOperator
+     * 
+     * @typedef {"lparentheses" | "rparentheses" | "pre-unary" | "post-unary" | "binary" | "number" | "var" | "token"} tokenType
      */
 
     constructor(){
@@ -66,16 +68,16 @@ class ExpressionParser{
         this.registerPostfixUnaryOperator("³", x=>x*x*x);
 
         //Common binary operators
-        this.registerBinaryOperator("\\+", (a, b) => a + b, 1);
+        this.registerBinaryOperator("+", (a, b) => a + b, 1);
         this.registerBinaryOperator("-", (a, b) => a - b, 1);
-        this.registerBinaryOperator("\\*", (a, b) => a * b, 2);
+        this.registerBinaryOperator("*", (a, b) => a * b, 2);
         this.registerBinaryOperator("/", (a, b) => a / b, 2);
 		this.registerBinaryOperator("%", (a,b) => ((a % b) + b) % b, 2);
-        this.registerBinaryOperator("\\^", Math.pow, 3);
+        this.registerBinaryOperator("^", Math.pow, 3);
 
 		this.registerBinaryOperator("XOR", (a,b) => a ^ b, 0);
-		this.registerBinaryOperator("OR", (a,b) => a ^ b, 0);
-		this.registerBinaryOperator("AND", (a,b) => a ^ b, 0);
+		this.registerBinaryOperator("OR", (a,b) => a | b, 0);
+		this.registerBinaryOperator("AND", (a,b) => a & b, 0);
     }
 
     /**
@@ -105,22 +107,27 @@ class ExpressionParser{
      * @param {Number} precedence
      */
     registerBinaryOperator(name,operation,precedence){
-        this.binaryOperators.set(name,{name:name, operation:operation, precedence:precedence});
+        this.binaryOperators.set(name,{name:name.replace(/\*|\^|\+/g,"\\$&"), operation:operation, precedence:precedence});
     }
 
     /**@param expression {String}*/
     compile(expression){
-		let tkns = [...expression.matchAll(new RegExp(`(\\()|(\\))|(${
-			[...this.prefixUnaryOperators.keys()].join("|")})|(${
-            [...this.postfixUnaryOperators.keys()].join("|")})|(${
-            [...this.binaryOperators.keys()].join("|")})|(${
-            [...this.constants.keys()].join("|")
-		})|([a-zA-Z]_[_\\w]+|[a-zA-Z])|(\\d+\\.\\d+|\\.\\d+|\\d+)`,"g"))].map(i=>`${
+        //Regex pattern to match all operators, variables, and constants
+        const pattern = new RegExp(`(\\()|(\\))|(${
+			[...this.prefixUnaryOperators.values()].map(i=>i.name).join("|")})|(${
+            [...this.postfixUnaryOperators.values()].map(i=>i.name).join("|")})|(${
+            [...this.binaryOperators.values()].map(i=>i.name).join("|")})|(${
+            [...this.constants.values()].map(i=>i.name).join("|")
+		})|([a-zA-Z]_[_\\w]+|[a-zA-Z])|(\\d+\\.\\d+|\\.\\d+|\\d+)`,"g");
+
+        //Excecute the regex and figure out the token type and token value
+		let tkns = [...expression.matchAll(pattern)].map(i=>`${
 			i[1]?"lparentheses":  i[2]?"rparentheses":
             i[3]?"pre-unary": i[4]?"post-unary": i[5]?"binary":
             i[6]?"number": i[7]?"var": i[8]?"number": "token"
 		} ${i[6] ? this.constants.get(i[0]).value : i[0]}`);
 
+        //Change unary negatives to bianry minus in right context, and insert multiplication signs between consective terms
         {
             let res = [];
             let i = 0, lastTknType, tknType = "token",tknVal, tkn;
@@ -129,7 +136,7 @@ class ExpressionParser{
                 tkn = tkns[i], [tknType, tknVal] = tkn.split(" ");
 
                 if(lastTknType != "lparentheses" && lastTknType != "binary" && tkn == "pre-unary -") tkn = tkns[i] = "binary -";
-                if(["number","var","post-unary","rparenthesis"].includes(lastTknType) && ["number", "var","pre-unary","lparenthesis"].includes(tknType)){
+                if(["number","var","post-unary","rparenthesis"].includes(lastTknType) && ["number", "var","pre-unary","lparentheses"].includes(tknType)){
                     res.push("binary *");
                 }
 
@@ -139,12 +146,70 @@ class ExpressionParser{
 
             tkns = res;
         }
-        console.log(tkns)
+        console.log(tkns);
+        /**@type {{type:tokenType,val:string}[]}*/
+        let tokens = tkns.map(i=>i.split(" ")).map(([type,val])=>({type:type,val:val}));
+        //console.log(tokens);
 
-        return null;
+        
+
+        /**@type {{type:tokenType,val:string}[]}*/
+        let stack = [];
+        /**@type {{type:tokenType,val:string}[]}*/
+        let opStack = [];
+
+        for(const token of tokens){
+            switch(token.type){
+                case 'number':
+                case 'var':
+                    stack.push(token);
+                    while(opStack.length > 0 && opStack[opStack.length-1].type == 'pre-unary'){
+                        stack.push(opStack.pop());
+                    }
+                    break;
+                
+                case 'pre-unary':
+                case 'lparentheses':
+                    opStack.push(token);
+                    break;
+                case 'rparentheses':
+                    let topToken = opStack.pop();
+                    while(topToken.type != 'lparentheses'){
+                        stack.push(topToken);
+                        topToken = opStack.pop();
+                        if(!topToken) throw Error("Invalid syntax: unmatched right parentheses")
+                    }
+                    while(opStack.length > 0 && opStack[opStack.length-1].type == 'pre-unary'){
+                        stack.push(opStack.pop());
+                    }
+                    break;
+                case 'post-unary':
+                    stack.push(token);
+                    break;
+                case 'binary':
+                    while(opStack.length > 0 && opStack[opStack.length - 1].type != 'lparentheses' && 
+                        this.binaryOperators.get(token.val).precedence <=
+                        this.binaryOperators.get(opStack[opStack.length - 1].val).precedence){
+                        stack.push(opStack.pop());
+                    }
+                    opStack.push(token);
+                    break;
+            }
+            
+            console.log(`<${token.type} ${token.val}>` + ", " + stack.map(i=>`<${i.type} ${i.val}>`).join(" ") + ", " + opStack.map(i=>`<${i.type} ${i.val}>`).join(" "));
+        }
+        console.log([...stack, ...opStack.reverse()].map(i=>i.val).join(" "));
+        return [...stack, ...opStack.reverse()];
     }
 }
-
+class CompiledExpression{
+    constructor(tokens){
+        this.tokens = tokens;
+    }
+    eval(){
+        
+    }
+}
 
 const toRPN = (expr)=>{
     const formatted_expr = (expr.replace(/ /g,'')                                   					//remove whitespace
