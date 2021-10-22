@@ -1,6 +1,26 @@
+/**
+ * @param {T[]} arr 
+ * @returns {T}
+ * @template T 
+ */
+function peek(arr){return arr[arr.length - 1];}
+
+/**
+ * @param {T} x 
+ * @returns {T}
+ * @template T
+ */
+function logAndReturn(x){return console.log(x),x}
+
+
 const ooo = {'B:^':3,	'B:*':2,	'B:/':2,	'B:+':1,	'B:-':1,	'('  :0};
 
-class ExpressionParser{
+/**
+ * @typedef {"lparentheses" | "rparentheses" | "pre-unary" | "post-unary" | "binary" | "number" | "var" | "token"} tokenType
+ * @typedef {{type:tokenType,value:string}} Token
+ */
+
+const ExpressionParser = {
     /**
      * @typedef {{
      *      name: String,
@@ -17,20 +37,19 @@ class ExpressionParser{
      *      operation: (a:Number, b:Number)=>Number,
      *      precedence: Number
      * }} BinaryOperator
-     * 
-     * @typedef {"lparentheses" | "rparentheses" | "pre-unary" | "post-unary" | "binary" | "number" | "var" | "token"} tokenType
      */
 
-    constructor(){
-        /**@type {Map<String,Constant}*/
-        this.constants = new Map();
-        /**@type {Map<String,UnaryOperator>}*/
-        this.prefixUnaryOperators = new Map();
-        /**@type {Map<String,UnaryOperator>}*/
-        this.postfixUnaryOperators = new Map();
-        /**@type {Map<String,BinaryOperator>}*/
-        this.binaryOperators = new Map();
+    
+    /**@private @type {Map<String,Constant}*/
+    constants : new Map(),
+    /**@private @type {Map<String,UnaryOperator>}*/
+    prefixUnaryOperators : new Map(),
+    /**@private @type {Map<String,UnaryOperator>}*/
+    postfixUnaryOperators : new Map(),
+    /**@private @type {Map<String,BinaryOperator>}*/
+    binaryOperators : new Map(),
 
+    registerCommon:()=>{
         //Built-in constants
         this.registerConstant("e",   Math.E);
         this.registerConstant("π",   Math.PI);
@@ -78,40 +97,40 @@ class ExpressionParser{
 		this.registerBinaryOperator("XOR", (a,b) => a ^ b, 0);
 		this.registerBinaryOperator("OR", (a,b) => a | b, 0);
 		this.registerBinaryOperator("AND", (a,b) => a & b, 0);
-    }
+    },
 
     /**
      * @param {String} name
      * @param {Number} value
      */
-    registerConstant(name,value){
+    registerConstant:function registerConstant(name,value){
         this.constants.set(name,{name:name,value:value});
-    }
+    },
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      */
-    registerPrefixUnaryOperator(name,operation){
+    registerPrefixUnaryOperator:function registerPrefixUnaryOperator(name,operation){
         this.prefixUnaryOperators.set(name,{name:name, operation:operation});
-    }
+    },
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      */
-    registerPostfixUnaryOperator(name,operation){
+    registerPostfixUnaryOperator:function registerPostfixUnaryOperator(name,operation){
         this.postfixUnaryOperators.set(name,{name:name, operation:operation});
-    }
+    },
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      * @param {Number} precedence
      */
-    registerBinaryOperator(name,operation,precedence){
+    registerBinaryOperator: function registerBinaryOperator(name,operation,precedence){
         this.binaryOperators.set(name,{name:name.replace(/\*|\^|\+/g,"\\$&"), operation:operation, precedence:precedence});
-    }
+    },
 
-    /**@param expression {String}*/
-    compile(expression){
+    /**@param {String} expression*/
+    compile: function compile(expression){
         //Regex pattern to match all operators, variables, and constants
         const pattern = new RegExp(`(\\()|(\\))|(${
 			[...this.prefixUnaryOperators.values()].map(i=>i.name).join("|")})|(${
@@ -135,7 +154,7 @@ class ExpressionParser{
                 lastTknType = tknType;
                 tkn = tkns[i], [tknType, tknVal] = tkn.split(" ");
 
-                if(lastTknType != "lparentheses" && lastTknType != "binary" && tkn == "pre-unary -") tkn = tkns[i] = "binary -";
+                if(!["lparentheses","binary","pre-unary"].includes(lastTknType) && tkn == "pre-unary -") tkn = tkns[i] = "binary -";
                 if(["number","var","post-unary","rparenthesis"].includes(lastTknType) && ["number", "var","pre-unary","lparentheses"].includes(tknType)){
                     res.push("binary *");
                 }
@@ -147,15 +166,13 @@ class ExpressionParser{
             tkns = res;
         }
         console.log(tkns);
-        /**@type {{type:tokenType,val:string}[]}*/
+        /**@type {Token[]}*/
         let tokens = tkns.map(i=>i.split(" ")).map(([type,val])=>({type:type,val:val}));
         //console.log(tokens);
 
-        
-
-        /**@type {{type:tokenType,val:string}[]}*/
+        /**@type {Token[]}*/
         let stack = [];
-        /**@type {{type:tokenType,val:string}[]}*/
+        /**@type {Token[]}*/
         let opStack = [];
 
         for(const token of tokens){
@@ -163,9 +180,11 @@ class ExpressionParser{
                 case 'number':
                 case 'var':
                     stack.push(token);
-                    while(opStack.length > 0 && opStack[opStack.length-1].type == 'pre-unary'){
+                    
+                    while(opStack.length > 0 && peek(opStack).type == 'pre-unary'){
                         stack.push(opStack.pop());
                     }
+
                     break;
                 
                 case 'pre-unary':
@@ -179,7 +198,7 @@ class ExpressionParser{
                         topToken = opStack.pop();
                         if(!topToken) throw Error("Invalid syntax: unmatched right parentheses")
                     }
-                    while(opStack.length > 0 && opStack[opStack.length-1].type == 'pre-unary'){
+                    while(opStack.length > 0 && peek(opStack).type == 'pre-unary'){
                         stack.push(opStack.pop());
                     }
                     break;
@@ -187,26 +206,53 @@ class ExpressionParser{
                     stack.push(token);
                     break;
                 case 'binary':
-                    while(opStack.length > 0 && opStack[opStack.length - 1].type != 'lparentheses' && 
-                        this.binaryOperators.get(token.val).precedence <=
-                        this.binaryOperators.get(opStack[opStack.length - 1].val).precedence){
+                    while(opStack.length > 0 && peek(opStack).type == 'binary' && this.binaryOperators.get(token.val).precedence <= this.binaryOperators.get(peek(opStack).val).precedence){
                         stack.push(opStack.pop());
                     }
                     opStack.push(token);
                     break;
             }
             
-            console.log(`<${token.type} ${token.val}>` + ", " + stack.map(i=>`<${i.type} ${i.val}>`).join(" ") + ", " + opStack.map(i=>`<${i.type} ${i.val}>`).join(" "));
+            console.log(`TOKEN: <${token.type} ${token.val}>` + "\nSTACK: " + stack.map(i=>`<${i.type} ${i.val}>`).join(" ") + "\nOPSTACK: " + opStack.map(i=>`<${i.type} ${i.val}>`).join(" "));
         }
         console.log([...stack, ...opStack.reverse()].map(i=>i.val).join(" "));
-        return [...stack, ...opStack.reverse()];
+        return new CompiledExpression([...stack, ...opStack.reverse()]);
     }
-}
+};
+
+
 class CompiledExpression{
+    /**@param {Token[]} tokens*/
     constructor(tokens){
         this.tokens = tokens;
     }
-    eval(){
+    /**
+     * @param {Map<String,Number>} vars
+     * @returns 
+     */
+    eval(vars){
+        /**@type {Number[]}*/
+        stack = [];
+        for(const token of this.tokens){
+            switch(token.type){
+                case 'number':
+                    stack.push(+token.value);
+                    break;
+                case 'var':
+                    stack.push(vars.get(token.value));
+                    break;
+                case 'pre-unary':
+                case 'post-unary':
+                    stack.push(ops[value](stack.pop()));
+                    break;
+                case 'binary':
+                    stack.push(ops[value](stack.pop(),stack.pop()));
+                    break;
+            }
+        }
+        return Math.round(stack[0]*100000)/100000;
+    }
+    simplify(){
         
     }
 }
