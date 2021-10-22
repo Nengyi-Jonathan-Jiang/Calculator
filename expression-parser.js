@@ -1,18 +1,5 @@
 const ooo = {'B:^':3,	'B:*':2,	'B:/':2,	'B:+':1,	'B:-':1,	'('  :0};
 
-function tokenize(input,regex){
-    return [...input.matchAll(regex)].map(i=>`<${
-        i[1]||1[2]?"":
-        i[3]?"pre-unary":
-        i[4]?"post-unary":
-        i[5]?"binary":
-        i[6]?"constant":
-        i[7]?"var":
-        i[8]?"number":
-        "token"
-    } ${i[0]}>`)
-}
-
 class ExpressionParser{
     /**
      * @typedef {{
@@ -83,7 +70,12 @@ class ExpressionParser{
         this.registerBinaryOperator("-", (a, b) => a - b, 1);
         this.registerBinaryOperator("\\*", (a, b) => a * b, 2);
         this.registerBinaryOperator("/", (a, b) => a / b, 2);
+		this.registerBinaryOperator("%", (a,b) => ((a % b) + b) % b, 2);
         this.registerBinaryOperator("\\^", Math.pow, 3);
+
+		this.registerBinaryOperator("XOR", (a,b) => a ^ b, 0);
+		this.registerBinaryOperator("OR", (a,b) => a ^ b, 0);
+		this.registerBinaryOperator("AND", (a,b) => a ^ b, 0);
     }
 
     /**
@@ -116,66 +108,37 @@ class ExpressionParser{
         this.binaryOperators.push({name:name, operation:operation, precedence:precedence});
     }
 
+	static tokenize(input,regex){
+		return [...input.matchAll(regex)].map(i=>`<${
+			i[1]?"parentheses":
+			i[2]?"pre-unary":
+			i[3]?"post-unary":
+			i[4]?"binary":
+			i[5]?"constant":
+			i[6]?"var":
+			i[7]?"number":
+			"token"
+		} ${i[0]}>`).join(" ")
+	}
+
     /**@param expression {String}*/
     parse(expression){
-        //Tokenize
-
-        //Helper function
-        /**
-         * @param {String} string
-         * @param {String} search
-         * @param {String} replace
-         */
-        const replaceAll = (string, search, replace)=>string.replace(new RegExp(search,"g"),replace);
-          
-        
-
-        console.log("Fixing spaces");
-
-        //Fix spaces
-        expression = expression.replace(/ /g,'').replace(new RegExp(
-            "/(?<=(\\*|\\/|\\+|-|\\()|^)-(?=[\\da-z(]|" + this.constants.map(i=>`(${i.name})`).join("|") + ")"
-        ,"g"),'|U:_');
-
-        console.log("Replacing unary operators");
-
-        //Replace prefix unary operators
-        for(let i = 0; i < this.prefixUnaryOperators.length; i++){
-            const op = this.prefixUnaryOperators[i];
-            expression = replaceAll(expression, op.name, `|PREFIX:${i}`);
-        }
-        //Replace postfix unary operators
-        for(let i = 0; i < this.postfixUnaryOperators.length; i++){
-            const op = this.postfixUnaryOperators[i];
-            expression = replaceAll(expression, op.name, `|POSTFIX:${i}`);
-        }
-        
-        console.log("Replacing numbers")
-        //Replace literals (numbers) and constants
-        expression = expression.replace(/\d+(\.\d+)?/g,"|LITERAL:$&");
-        for(let i = 0; i < this.constants.length; i++){
-            const constant = this.constants[i];
-            expression = replaceAll(expression, constant.name, `|LITERAL:${constant.value}`);
-        }
-
-        console.log("Replacing binary operators")
-        //Replace binary operators
-        for(let i = 0; i < this.postfixUnaryOperators.length; i++){
-            const op = this.binaryOperators[i];
-            expression = replaceAll(expression, op.name, `|BINARY:${i}`);
-        }
-
-        //Replace parentheses
-        expression = expression.replace(/\(/g,"|(:(");
-        expression = expression.replace(/\)/g,"|):)");
-
-        //Replace variable names
-        expression = expression.replace(/[a-z]/g, "|VAR:$&");
-
-        let tokenList = expression.split('|').filter(i=>i!='')
-
-        //console.log(tokenList);
-        return tokenList;
+		let tokens = [...expression.matchAll(new RegExp(`([()])|(${
+			this.prefixUnaryOperators.map(i=>i.name).join("|")})|(${
+			this.postfixUnaryOperators.map(i=>i.name).join("|")})|(${
+			this.binaryOperators.map(i=>i.name).join("|")})|(${
+			this.constants.map(i=>i.name).join("|")
+		})|([a-zA-Z]_[_\\w]+|[a-zA-Z])|(\\d+\\.\\d+|\\.\\d+|\\d+)`,"g"))].map(i=>`<${
+			i[1]?"parentheses":
+			i[2]?"pre-unary":
+			i[3]?"post-unary":
+			i[4]?"binary":
+			i[5]?"constant":
+			i[6]?"var":
+			i[7]?"number":
+			"token"
+		} ${i[0]}>`)
+        return tokens.join(" ")
     }
 }
 
