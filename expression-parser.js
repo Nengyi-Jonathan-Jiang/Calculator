@@ -122,14 +122,22 @@ class ExpressionParser{
 		} ${i[6] ? this.constants.get(i[0]).value : i[0]}`);
 
         {
+            let res = [];
             let i = 0, lastTknType, tknType = "token",tknVal, tkn;
             while(i < tkns.length){
                 lastTknType = tknType;
                 tkn = tkns[i], [tknType, tknVal] = tkn.split(" ");
 
-                if(lastTknType != "lparentheses" && lastTknType != "binary" && t == "pre-unary -") t = tkns[i] = "binary -";
-                a = t.split(" ")[0] == "binary" || t == "parentheses (";
+                if(lastTknType != "lparentheses" && lastTknType != "binary" && tkn == "pre-unary -") tkn = tkns[i] = "binary -";
+                if(["number","var","post-unary","rparenthesis"].includes(lastTknType) && ["number", "var","pre-unary","lparenthesis"].includes(tknType)){
+                    res.push("binary *");
+                }
+
+                res.push(tkn);
+                i++;
             }
+
+            tkns = res;
         }
         console.log(tkns)
 
