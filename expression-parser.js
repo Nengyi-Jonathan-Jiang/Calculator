@@ -108,19 +108,6 @@ class ExpressionParser{
         this.binaryOperators.push({name:name, operation:operation, precedence:precedence});
     }
 
-	static tokenize(input,regex){
-		return [...input.matchAll(regex)].map(i=>`<${
-			i[1]?"parentheses":
-			i[2]?"pre-unary":
-			i[3]?"post-unary":
-			i[4]?"binary":
-			i[5]?"constant":
-			i[6]?"var":
-			i[7]?"number":
-			"token"
-		} ${i[0]}>`).join(" ")
-	}
-
     /**@param expression {String}*/
     parse(expression){
 		let tokens = [...expression.matchAll(new RegExp(`([()])|(${
