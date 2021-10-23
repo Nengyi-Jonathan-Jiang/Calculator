@@ -55,15 +55,15 @@ class ExpressionParser{
      */
     registerCommon(){
         //Built-in constants
-        this.registerConstant("e",   Math.E);
-        this.registerConstant("π",   Math.PI);
-        this.registerConstant("pi",  Math.PI);
-        this.registerConstant("τ",   Math.PI * 2);
-        this.registerConstant("tau", Math.PI * 2);
-        this.registerConstant("Φ",   Math.sqrt(1.25) + .5);
-        this.registerConstant("phi", Math.sqrt(1.25) + .5);
-        this.registerConstant("ε",   ".0000000001");
-        this.registerConstant("epsilon", 1 / (1 << 32));
+        this.registerConstant("e",   Math.E)
+            .registerConstant("π",   Math.PI)
+            .registerConstant("pi",  Math.PI)
+            .registerConstant("τ",   Math.PI * 2)
+            .registerConstant("tau", Math.PI * 2)
+            .registerConstant("Φ",   Math.sqrt(1.25) + .5)
+            .registerConstant("phi", Math.sqrt(1.25) + .5)
+            .registerConstant("ε",   ".0000000001")
+            .registerConstant("epsilon", ".0000000001");
 
         //Common prefix unary operators
         this.registerPrefixUnaryOperator("√", Math.sqrt);
@@ -124,17 +124,19 @@ class ExpressionParser{
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
+     * @returns {ExpressionParser}
      */
     registerPostfixUnaryOperator(name,operation){
-        this.postfixUnaryOperators.set(name,{name:name, operation:operation});
+        return this.postfixUnaryOperators.set(name,{name:name, operation:operation}), this;
     }
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      * @param {Number} precedence
+     * @returns {ExpressionParser}
      */
     registerBinaryOperator(name,operation,precedence){
-        this.binaryOperators.set(name,{name:name.replace(/\*|\^|\+/g,"\\$&"), operation:operation, precedence:precedence});
+        return this.binaryOperators.set(name,{name:name.replace(/\*|\^|\+/g,"\\$&"), operation:operation, precedence:precedence}), this;
     }
 
     /**
