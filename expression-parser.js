@@ -51,52 +51,52 @@ const ExpressionParser = {
 
     registerCommon:()=>{
         //Built-in constants
-        this.registerConstant("e",   Math.E);
-        this.registerConstant("π",   Math.PI);
-        this.registerConstant("pi",  Math.PI);
-        this.registerConstant("τ",   Math.PI * 2);
-        this.registerConstant("tau", Math.PI * 2);
-        this.registerConstant("Φ",   Math.sqrt(1.25) + .5);
-        this.registerConstant("phi", Math.sqrt(1.25) + .5);
-        this.registerConstant("ε",   ".0000000001");
-        this.registerConstant("epsilon", 1 / (1 << 32));
+        ExpressionParser.registerConstant("e",   Math.E);
+        ExpressionParser.registerConstant("π",   Math.PI);
+        ExpressionParser.registerConstant("pi",  Math.PI);
+        ExpressionParser.registerConstant("τ",   Math.PI * 2);
+        ExpressionParser.registerConstant("tau", Math.PI * 2);
+        ExpressionParser.registerConstant("Φ",   Math.sqrt(1.25) + .5);
+        ExpressionParser.registerConstant("phi", Math.sqrt(1.25) + .5);
+        ExpressionParser.registerConstant("ε",   ".0000000001");
+        ExpressionParser.registerConstant("epsilon", 1 / (1 << 32));
 
         //Common prefix unary operators
-        this.registerPrefixUnaryOperator("√", Math.sqrt);
-        this.registerPrefixUnaryOperator("sqrt", Math.sqrt);
-        this.registerPrefixUnaryOperator("-", x=>-x);
-        this.registerPrefixUnaryOperator("−", x=>-x);
+        ExpressionParser.registerPrefixUnaryOperator("√", Math.sqrt);
+        ExpressionParser.registerPrefixUnaryOperator("sqrt", Math.sqrt);
+        ExpressionParser.registerPrefixUnaryOperator("-", x=>-x);
+        ExpressionParser.registerPrefixUnaryOperator("−", x=>-x);
 
-        this.registerPrefixUnaryOperator("log2", Math.log2);
-        this.registerPrefixUnaryOperator("log", Math.log10);
-        this.registerPrefixUnaryOperator("ln", Math.log);
-        this.registerPrefixUnaryOperator("exp", Math.exp);
+        ExpressionParser.registerPrefixUnaryOperator("log2", Math.log2);
+        ExpressionParser.registerPrefixUnaryOperator("log", Math.log10);
+        ExpressionParser.registerPrefixUnaryOperator("ln", Math.log);
+        ExpressionParser.registerPrefixUnaryOperator("exp", Math.exp);
 
-        this.registerPrefixUnaryOperator("sin",Math.sin);
-        this.registerPrefixUnaryOperator("cos",Math.cos);
-        this.registerPrefixUnaryOperator("tan",Math.tan);
-        this.registerPrefixUnaryOperator("asin",Math.asin);
-        this.registerPrefixUnaryOperator("acos",Math.acos);
-        this.registerPrefixUnaryOperator("atan",Math.atan);
+        ExpressionParser.registerPrefixUnaryOperator("sin",Math.sin);
+        ExpressionParser.registerPrefixUnaryOperator("cos",Math.cos);
+        ExpressionParser.registerPrefixUnaryOperator("tan",Math.tan);
+        ExpressionParser.registerPrefixUnaryOperator("asin",Math.asin);
+        ExpressionParser.registerPrefixUnaryOperator("acos",Math.acos);
+        ExpressionParser.registerPrefixUnaryOperator("atan",Math.atan);
 
-        this.registerPrefixUnaryOperator("sign",x=>x/Math.abs(x));
-        this.registerPrefixUnaryOperator("abs", x=>Math.abs(x));
+        ExpressionParser.registerPrefixUnaryOperator("sign",x=>x/Math.abs(x));
+        ExpressionParser.registerPrefixUnaryOperator("abs", x=>Math.abs(x));
 
         //Common postfix unary operators
-        this.registerPostfixUnaryOperator("²", x=>x*x);
-        this.registerPostfixUnaryOperator("³", x=>x*x*x);
+        ExpressionParser.registerPostfixUnaryOperator("²", x=>x*x);
+        ExpressionParser.registerPostfixUnaryOperator("³", x=>x*x*x);
 
         //Common binary operators
-        this.registerBinaryOperator("+", (a, b) => a + b, 1);
-        this.registerBinaryOperator("-", (a, b) => a - b, 1);
-        this.registerBinaryOperator("*", (a, b) => a * b, 2);
-        this.registerBinaryOperator("/", (a, b) => a / b, 2);
-		this.registerBinaryOperator("%", (a,b) => ((a % b) + b) % b, 2);
-        this.registerBinaryOperator("^", Math.pow, 3);
+        ExpressionParser.registerBinaryOperator("+", (a, b) => a + b, 1);
+        ExpressionParser.registerBinaryOperator("-", (a, b) => a - b, 1);
+        ExpressionParser.registerBinaryOperator("*", (a, b) => a * b, 2);
+        ExpressionParser.registerBinaryOperator("/", (a, b) => a / b, 2);
+		ExpressionParser.registerBinaryOperator("%", (a,b) => ((a % b) + b) % b, 2);
+        ExpressionParser.registerBinaryOperator("^", Math.pow, 3);
 
-		this.registerBinaryOperator("XOR", (a,b) => a ^ b, 0);
-		this.registerBinaryOperator("OR", (a,b) => a | b, 0);
-		this.registerBinaryOperator("AND", (a,b) => a & b, 0);
+		ExpressionParser.registerBinaryOperator("XOR", (a,b) => a ^ b, 0);
+		ExpressionParser.registerBinaryOperator("OR", (a,b) => a | b, 0);
+		ExpressionParser.registerBinaryOperator("AND", (a,b) => a & b, 0);
     },
 
     /**
@@ -104,21 +104,21 @@ const ExpressionParser = {
      * @param {Number} value
      */
     registerConstant:function registerConstant(name,value){
-        this.constants.set(name,{name:name,value:value});
+        ExpressionParser.constants.set(name,{name:name,value:value});
     },
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      */
     registerPrefixUnaryOperator:function registerPrefixUnaryOperator(name,operation){
-        this.prefixUnaryOperators.set(name,{name:name, operation:operation});
+        ExpressionParser.prefixUnaryOperators.set(name,{name:name, operation:operation});
     },
     /**
      * @param {String} name 
      * @param {(x:Number)=>Number} operation 
      */
     registerPostfixUnaryOperator:function registerPostfixUnaryOperator(name,operation){
-        this.postfixUnaryOperators.set(name,{name:name, operation:operation});
+        ExpressionParser.postfixUnaryOperators.set(name,{name:name, operation:operation});
     },
     /**
      * @param {String} name 
@@ -126,17 +126,17 @@ const ExpressionParser = {
      * @param {Number} precedence
      */
     registerBinaryOperator: function registerBinaryOperator(name,operation,precedence){
-        this.binaryOperators.set(name,{name:name.replace(/\*|\^|\+/g,"\\$&"), operation:operation, precedence:precedence});
+        ExpressionParser.binaryOperators.set(name,{name:name.replace(/\*|\^|\+/g,"\\$&"), operation:operation, precedence:precedence});
     },
 
     /**@param {String} expression*/
     compile: function compile(expression){
         //Regex pattern to match all operators, variables, and constants
         const pattern = new RegExp(`(\\()|(\\))|(${
-			[...this.prefixUnaryOperators.values()].map(i=>i.name).join("|")})|(${
-            [...this.postfixUnaryOperators.values()].map(i=>i.name).join("|")})|(${
-            [...this.binaryOperators.values()].map(i=>i.name).join("|")})|(${
-            [...this.constants.values()].map(i=>i.name).join("|")
+			[...ExpressionParser.prefixUnaryOperators.values()].map(i=>i.name).join("|")})|(${
+            [...ExpressionParser.postfixUnaryOperators.values()].map(i=>i.name).join("|")})|(${
+            [...ExpressionParser.binaryOperators.values()].map(i=>i.name).join("|")})|(${
+            [...ExpressionParser.constants.values()].map(i=>i.name).join("|")
 		})|([a-zA-Z]_[_\\w]+|[a-zA-Z])|(\\d+\\.\\d+|\\.\\d+|\\d+)`,"g");
 
         //Excecute the regex and figure out the token type and token value
@@ -144,7 +144,7 @@ const ExpressionParser = {
 			i[1]?"lparentheses":  i[2]?"rparentheses":
             i[3]?"pre-unary": i[4]?"post-unary": i[5]?"binary":
             i[6]?"number": i[7]?"var": i[8]?"number": "token"
-		} ${i[6] ? this.constants.get(i[0]).value : i[0]}`);
+		} ${i[6] ? ExpressionParser.constants.get(i[0]).value : i[0]}`);
 
         //Change unary negatives to bianry minus in right context, and insert multiplication signs between consective terms
         {
@@ -206,7 +206,7 @@ const ExpressionParser = {
                     stack.push(token);
                     break;
                 case 'binary':
-                    while(opStack.length > 0 && peek(opStack).type == 'binary' && this.binaryOperators.get(token.val).precedence <= this.binaryOperators.get(peek(opStack).val).precedence){
+                    while(opStack.length > 0 && peek(opStack).type == 'binary' && ExpressionParser.binaryOperators.get(token.val).precedence <= ExpressionParser.binaryOperators.get(peek(opStack).val).precedence){
                         stack.push(opStack.pop());
                     }
                     opStack.push(token);
