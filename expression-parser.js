@@ -66,46 +66,46 @@ class ExpressionParser{
             .registerConstant("epsilon", ".0000000001");
 
         //Common prefix unary operators
-        this.registerPrefixUnaryOperator("√", Math.sqrt);
-        this.registerPrefixUnaryOperator("sqrt", Math.sqrt);
-        this.registerPrefixUnaryOperator("-", x=>-x);
-        this.registerPrefixUnaryOperator("−", x=>-x);
+        this.registerPrefixUnaryOperator("√", Math.sqrt)
+            .registerPrefixUnaryOperator("sqrt", Math.sqrt)
+            .registerPrefixUnaryOperator("-", x=>-x)
+            .registerPrefixUnaryOperator("−", x=>-x);
 
-        this.registerPrefixUnaryOperator("log2", Math.log2);
-        this.registerPrefixUnaryOperator("log", Math.log10);
-        this.registerPrefixUnaryOperator("ln", Math.log);
-        this.registerPrefixUnaryOperator("exp", Math.exp);
+        this.registerPrefixUnaryOperator("log2", Math.log2)
+            .registerPrefixUnaryOperator("log", Math.log10)
+            .registerPrefixUnaryOperator("ln", Math.log)
+            .registerPrefixUnaryOperator("exp", Math.exp);
 
-        this.registerPrefixUnaryOperator("sin",Math.sin);
-        this.registerPrefixUnaryOperator("cos",Math.cos);
-        this.registerPrefixUnaryOperator("tan",Math.tan);
-        this.registerPrefixUnaryOperator("asin",Math.asin);
-        this.registerPrefixUnaryOperator("acos",Math.acos);
-        this.registerPrefixUnaryOperator("atan",Math.atan);
+        this.registerPrefixUnaryOperator("sin",Math.sin)
+            .registerPrefixUnaryOperator("cos",Math.cos)
+            .registerPrefixUnaryOperator("tan",Math.tan)
+            .registerPrefixUnaryOperator("asin",Math.asin)
+            .registerPrefixUnaryOperator("acos",Math.acos)
+            .registerPrefixUnaryOperator("atan",Math.atan);
 
-        this.registerPrefixUnaryOperator("sign",x=>x/Math.abs(x));
-        this.registerPrefixUnaryOperator("abs", x=>Math.abs(x));
+        this.registerPrefixUnaryOperator("sign",x=>x/Math.abs(x))
+            .registerPrefixUnaryOperator("abs", x=>Math.abs(x));
 
         //Common postfix unary operators
-        this.registerPostfixUnaryOperator("²", x=>x*x);
-        this.registerPostfixUnaryOperator("³", x=>x*x*x);
+        this.registerPostfixUnaryOperator("²", x=>x*x)
+            .registerPostfixUnaryOperator("³", x=>x*x*x);
 
         //Common binary operators
-        this.registerBinaryOperator("+", (a, b) => a + b, 1);
-        this.registerBinaryOperator("-", (a, b) => a - b, 1);
-        this.registerBinaryOperator("*", (a, b) => a * b, 2);
-        this.registerBinaryOperator("/", (a, b) => a / b, 2);
-		this.registerBinaryOperator("%", (a,b) => ((a % b) + b) % b, 2);
-        this.registerBinaryOperator("^", Math.pow, 3);
+        this.registerBinaryOperator("+", (a, b) => a + b, 1)
+            .registerBinaryOperator("-", (a, b) => a - b, 1)
+            .registerBinaryOperator("*", (a, b) => a * b, 2)
+            .registerBinaryOperator("/", (a, b) => a / b, 2)
+            .registerBinaryOperator("%", (a,b) => ((a % b) + b) % b, 2)
+            .registerBinaryOperator("^", Math.pow, 3);
 
-		this.registerBinaryOperator("XOR", (a,b) => a ^ b, 0);
-		this.registerBinaryOperator("OR", (a,b) => a | b, 0);
-		this.registerBinaryOperator("AND", (a,b) => a & b, 0);
+		this.registerBinaryOperator("XOR", (a,b) => a ^ b, 0)
+            .registerBinaryOperator("OR", (a,b) => a | b, 0)
+            .registerBinaryOperator("AND", (a,b) => a & b, 0);
 
         return this;
     }
 
-    /**
+    /** 
      * @param {String} name
      * @param {Number} value
      * @returns {ExpressionParser}
@@ -178,10 +178,10 @@ class ExpressionParser{
             }
 
             tkns = res;
-        }
-        console.log(tkns);
+            }
+            console.log(tkns);
         /**@type {Token[]}*/
-        let tokens = tkns.map(i=>i.split(" ")).map(([type,val])=>({type:type,val:val}));
+        let tokens = tkns.map(i=>i.split(" ")).map(([type,value])=>({type:type,value:value}));
         //console.log(tokens);
 
         /**@type {Token[]}*/
@@ -194,11 +194,9 @@ class ExpressionParser{
                 case 'number':
                 case 'var':
                     stack.push(token);
-                    
                     while(opStack.length > 0 && peek(opStack).type == 'pre-unary'){
                         stack.push(opStack.pop());
                     }
-
                     break;
                 
                 case 'pre-unary':
@@ -210,7 +208,6 @@ class ExpressionParser{
                     while(topToken.type != 'lparentheses'){
                         stack.push(topToken);
                         topToken = opStack.pop();
-                        if(!topToken) throw Error("Invalid syntax: unmatched right parentheses")
                     }
                     while(opStack.length > 0 && peek(opStack).type == 'pre-unary'){
                         stack.push(opStack.pop());
@@ -227,13 +224,15 @@ class ExpressionParser{
                     break;
             }
             
-            console.log(`TOKEN: <${token.type} ${token.val}>` + "\nSTACK: " + stack.map(i=>`<${i.type} ${i.val}>`).join(" ") + "\nOPSTACK: " + opStack.map(i=>`<${i.type} ${i.val}>`).join(" "));
+            //console.log(`TOKEN: <${token.type} ${token.val}>` + "\nSTACK: " + stack.map(i=>`<${i.type} ${i.val}>`).join(" ") + "\nOPSTACK: " + opStack.map(i=>`<${i.type} ${i.val}>`).join(" "));
         }
-        console.log([...stack, ...opStack.reverse()].map(i=>i.val).join(" "));
-        return new CompiledExpression([...stack, ...opStack.reverse()]);
+        console.log([...stack, ...opStack.reverse()].map(i=>i.value).join(" "));
+        return new CompiledExpression([...stack, ...opStack.reverse()],this);
     }
 
-    
+    /**
+     * @private
+     */
     static default = new ExpressionParser().registerCommon();
 
     /**
@@ -247,9 +246,18 @@ class ExpressionParser{
 };
 
 class CompiledExpression{
-    /**@param {Token[]} tokens*/
-    constructor(tokens){
+    /**
+     * @param {Token[]} tokens
+     * @param {ExpressionParser}
+     */
+    constructor(tokens, parser){
         this.tokens = tokens;
+        /**@private @type {Map<String,UnaryOperator>}*/
+        this.preUOps = parser.prefixUnaryOperators;
+        /**@private @type {Map<String,UnaryOperator>}*/
+        this.postUOps = parser.postfixUnaryOperators;
+        /**@private @type {Map<String,BinaryOperator>}*/
+        this.binOps = parser.binaryOperators;
     }
     /**
      * @param {Map<String,Number>} vars
@@ -257,7 +265,7 @@ class CompiledExpression{
      */
     eval(vars){
         /**@type {Number[]}*/
-        stack = [];
+        let stack = [];
         for(const token of this.tokens){
             switch(token.type){
                 case 'number':
@@ -267,11 +275,13 @@ class CompiledExpression{
                     stack.push(vars.get(token.value));
                     break;
                 case 'pre-unary':
+                    stack.push(this.preUOps.get(token.value).operation(stack.pop()));
+                    break;
                 case 'post-unary':
-                    stack.push(ops[value](stack.pop()));
+                    stack.push(this.postUOps.get(token.value).operation(stack.pop()));
                     break;
                 case 'binary':
-                    stack.push(ops[value](stack.pop(),stack.pop()));
+                    stack.push(this.binOps.get(token.value).operation(stack.pop(),stack.pop()));
                     break;
             }
         }
